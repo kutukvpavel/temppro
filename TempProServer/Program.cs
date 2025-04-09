@@ -21,7 +21,7 @@ namespace TempProServer
             Console.CancelKeyPress += Console_Cancel;
 
             var menu = new ConsoleMenu(args, level: 0)
-                .Add("Connect to TempPRO", () => Parser.Default.ParseArguments(args).WithParsed((Options o) => ConnectedMenuShow(args, o)))
+                .Add("Connect to TempPRO", () => Parser.Default.ParseArguments<Options>(args).WithParsed((Options o) => ConnectedMenuShow(args, o)))
                 .Add("Exit", () => Environment.Exit(0))
                 .Configure(config =>
                 {
