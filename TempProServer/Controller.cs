@@ -9,6 +9,7 @@ namespace TempProServer
     public class Controller : ControllerBase
     {
         protected readonly Configuration Config;
+        protected readonly Exception NotInitializedExcepton = new InvalidOperationException("Not initialized");
 
         public Controller(Configuration cfg) : base()
         {
@@ -16,6 +17,7 @@ namespace TempProServer
         }
 
         public object LockObject { get; } = new();
+        public bool IsInitialized { get; protected set; } = false;
 
         public void Init()
         {
@@ -57,6 +59,7 @@ namespace TempProServer
                     Console.WriteLine("Failed to connect to controller");
                     throw new InvalidDataException();
                 }
+                IsInitialized = true;
             }
         }
 
@@ -66,6 +69,7 @@ namespace TempProServer
         /// <param name="v">degC</param>
         public void SetSetpoint(double v)
         {
+            if (!IsInitialized) throw NotInitializedExcepton;
             lock (LockObject)
             {
                 SetSetPoint(this, Config.DeviceAddress, v, bDegF);
@@ -78,6 +82,7 @@ namespace TempProServer
         /// <param name="v">degC/min</param>
         public void SetRampRate(double v)
         {
+            if (!IsInitialized) throw NotInitializedExcepton;
             lock (LockObject)
             {
                 SetRampRateDegPerMin(this, Config.DeviceAddress);
@@ -87,6 +92,7 @@ namespace TempProServer
 
         public void SetRampControl(bool enable)
         {
+            if (!IsInitialized) throw NotInitializedExcepton;
             if (enable)
             {
                 lock (LockObject)
@@ -109,6 +115,7 @@ namespace TempProServer
         /// <returns>degC</returns>
         public double GetTemperature()
         {
+            if (!IsInitialized) throw NotInitializedExcepton;
             double ret;
             lock (LockObject)
             {

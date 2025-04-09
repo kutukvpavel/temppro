@@ -177,6 +177,7 @@ namespace TempProServer
         public void Start()
         {
             if (!_Profile.Verified) throw new InvalidOperationException("Profile has to be verified before execution");
+            if (!_Controller.IsInitialized) throw new InvalidOperationException("Controller has to be initialized before execution");
             State = ExecutionStates.Running;
             CanOverride = true;
             _Timer.Start();

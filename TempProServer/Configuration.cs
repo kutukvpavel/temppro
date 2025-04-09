@@ -20,6 +20,12 @@ namespace TempProServer
             using var reader = new StreamReader(path);
             Instance = deserializer.Deserialize<Configuration>(reader);
         }
+        public static void Save(string path)
+        {
+            var serializer = new SerializerBuilder().Build();
+            using var writer = new StreamWriter(path);
+            serializer.Serialize(writer, Instance);
+        }
 
         public Configuration() { }
 
