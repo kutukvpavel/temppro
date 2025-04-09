@@ -1,0 +1,32 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TempProServer", "TempProServer\TempProServer.csproj", "{2BE1CE75-917C-4EB9-9582-1D0873F560BC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TempProGui", "TempProGui\TempProGui.csproj", "{37F205B0-84E4-4C20-9B97-E83660D804E5}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2BE1CE75-917C-4EB9-9582-1D0873F560BC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2BE1CE75-917C-4EB9-9582-1D0873F560BC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2BE1CE75-917C-4EB9-9582-1D0873F560BC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2BE1CE75-917C-4EB9-9582-1D0873F560BC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{37F205B0-84E4-4C20-9B97-E83660D804E5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{37F205B0-84E4-4C20-9B97-E83660D804E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{37F205B0-84E4-4C20-9B97-E83660D804E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{37F205B0-84E4-4C20-9B97-E83660D804E5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C8CCFE3E-449F-4CD9-8AF6-2A49ACD84E29}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C8CCFE3E-449F-4CD9-8AF6-2A49ACD84E29}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C8CCFE3E-449F-4CD9-8AF6-2A49ACD84E29}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C8CCFE3E-449F-4CD9-8AF6-2A49ACD84E29}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
