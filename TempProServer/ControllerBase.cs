@@ -35,7 +35,7 @@ namespace TempProServer
         protected int ftStatus;
         protected int lngTotalBytesReceived;
         protected int SoftwareNum;
-        private bool commok;
+        protected bool commok;
         protected bool bDegF;
         protected double sngSetPointHighLimit;
 

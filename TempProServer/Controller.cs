@@ -18,6 +18,7 @@ namespace TempProServer
 
         public object LockObject { get; } = new();
         public bool IsInitialized { get; protected set; } = false;
+        public bool IsError => !commok;
 
         public void Init()
         {

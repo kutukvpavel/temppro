@@ -189,6 +189,7 @@ namespace TempProServer
         }
         public void Abort()
         {
+            if (State == ExecutionStates.Idle) return;
             _Timer.Stop();
             SegmentIndex = -1;
             TimePast = 0;
@@ -211,11 +212,6 @@ namespace TempProServer
         {
             if (State != ExecutionStates.Running || !CanOverride) return;
             _Controller.SetSetpoint(v);
-        }
-        public void ResetError()
-        {
-            if (State != ExecutionStates.Error) return;
-            State = ExecutionStates.Idle;
         }
         public Exception? VerifyAndCalculate()
         {

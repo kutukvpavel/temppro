@@ -159,10 +159,15 @@ namespace TempProServer
             }
             while (!CancellationSource.IsCancellationRequested && exec.State == ExecutionStates.Running)
             {
+                if (ctrl.IsError)
+                {
+                    Console.WriteLine("Controller communication error, aborting");
+                    break;
+                }
                 Console.Write($"\rT = {exec.CurrentTemperature:F1}, set = {exec.CurrentSetpoint:F1}, step = {exec.SegmentIndex} ({exec.Progress:F0}%), tr = {exec.TimeRemaining}");
                 Thread.Sleep(1000);
             }
-            if (CancellationSource.IsCancellationRequested) exec.Abort();
+            if (CancellationSource.IsCancellationRequested || ctrl.IsError) exec.Abort();
         }
     }
 }
