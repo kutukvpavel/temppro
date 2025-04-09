@@ -46,6 +46,7 @@ namespace TempProServer
             catch (Exception)
             {
                 Console.WriteLine("Unable to initialize the controller interface, exiting.");
+                controller.CloseConnection();
                 Environment.Exit(1);
             }
             try
@@ -90,14 +91,24 @@ namespace TempProServer
                         }
                         if (o.ProfileFile != null)
                         {
-                            ExecuteProfile(o.ProfileFile);
+                            ExecuteProfile(o.ProfileFile, controller);
                         }
                         else
                         {
                             Console.WriteLine("No profile path was specified on the command line");
                         }
                     })
-                    .Add("Exit", () => Environment.Exit(0))
+                    .Add("Exit", () => { 
+                        try
+                        {
+                            controller.CloseConnection();
+                        }
+                        catch (Exception)
+                        {
+                            
+                        }
+                        Environment.Exit(0);
+                    })
                     .Configure(config =>
                     {
                         config.Selector = "--> ";
@@ -114,19 +125,32 @@ namespace TempProServer
             catch (Exception)
             {
                 Console.WriteLine("Unable to execute specified action. Exiting.");
+                controller.CloseConnection();
                 Environment.Exit(2);
             }
         }
 
-        public static void ExecuteProfile(string path)
+        public static void ExecuteProfile(string path, Controller ctrl)
         {
             if (!Path.IsPathFullyQualified(path))
             {
                 path = Path.GetFullPath(path, Environment.CurrentDirectory);
             }
             var prf = Profile.Load(path);
-            var ctrl = new Controller(Configuration.Instance);
             var exec = new Execution(prf, ctrl, Configuration.Instance);
+            try
+            {
+                var status = ctrl.GetConnectionStatus();
+                if (!status.Item1) {
+                    Console.WriteLine($"Controller connection error: {status.Item2}");
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to check controller connection status: {ex}");
+                return;
+            }
             try
             {
                 var err = exec.VerifyAndCalculate();
@@ -142,24 +166,17 @@ namespace TempProServer
             }
             try
             {
-                ctrl.Init();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to initialize controller: {ex}");
-                return;
-            }
-            try
-            {
                 exec.Start();
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Failed to start execution: {ex}");
+                exec.Abort();
+                return;
             }
             while (!CancellationSource.IsCancellationRequested && exec.State == ExecutionStates.Running)
             {
-                if (ctrl.IsError)
+                if (ctrl.ErrorOccurred)
                 {
                     Console.WriteLine("Controller communication error, aborting");
                     break;
@@ -167,7 +184,7 @@ namespace TempProServer
                 Console.Write($"\rT = {exec.CurrentTemperature:F1}, set = {exec.CurrentSetpoint:F1}, step = {exec.SegmentIndex} ({exec.Progress:F0}%), tr = {exec.TimeRemaining}");
                 Thread.Sleep(1000);
             }
-            if (CancellationSource.IsCancellationRequested || ctrl.IsError) exec.Abort();
+            if (CancellationSource.IsCancellationRequested || ctrl.ErrorOccurred) exec.Abort();
         }
     }
 }

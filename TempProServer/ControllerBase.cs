@@ -308,13 +308,14 @@ namespace TempProServer
             commok = false;
         }
 
-        protected bool USBStatusCheck(Controller currUSBObject)
+        protected Tuple<bool, string> USBStatusCheck(Controller currUSBObject)
         {
+            string text2 = "OK";
             currUSBObject.ftStatus = FT_GetQueueStatus(currUSBObject.lngUSBHandle, ref currUSBObject.lngTotalBytesReceived);
             if ((currUSBObject.ftStatus != FT_OK) | (currUSBObject.ftStatus == FT_IO_ERROR))
             {
                 string text = "USB read status Failed";
-                string text2 = "There is a problem with the USB port." + LineEnding;
+                text2 = "There is a problem with the USB port." + LineEnding;
                 text2 = text2 + "The problem could be: " + LineEnding;
                 text2 = text2 + "The cable was disconnected or " + LineEnding;
                 text2 = text2 + "the control unit was shut off." + LineEnding;
@@ -326,9 +327,9 @@ namespace TempProServer
             }
             if (currUSBObject.lngUSBHandle == 0)
             {
-                return false;
+                return new Tuple<bool, string>(false, text2);
             }
-            return true;
+            return new Tuple<bool, string>(true, text2);
         }
 
         protected int CRC16A(ref byte[] Buffer)

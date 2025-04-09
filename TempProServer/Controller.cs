@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Net.Http.Headers;
 
 namespace TempProServer
 {
@@ -18,10 +19,25 @@ namespace TempProServer
 
         public object LockObject { get; } = new();
         public bool IsInitialized { get; protected set; } = false;
-        public bool IsError => !commok;
+        public bool ErrorOccurred => !commok;
 
         public void Init()
         {
+            lock (LockObject)
+            {
+                if (IsInitialized)
+                {
+                    try
+                    {
+                        CloseUSBPort();
+                        IsInitialized = false;
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Can't close the port, continue anyway: {ex}");
+                    }
+                }
+            }
             bDegF = false;
             lock (LockObject)
             {
@@ -70,9 +86,9 @@ namespace TempProServer
         /// <param name="v">degC</param>
         public void SetSetpoint(double v)
         {
-            if (!IsInitialized) throw NotInitializedExcepton;
             lock (LockObject)
             {
+                if (!IsInitialized) throw NotInitializedExcepton;
                 SetSetPoint(this, Config.DeviceAddress, v, bDegF);
             }
         }
@@ -83,9 +99,9 @@ namespace TempProServer
         /// <param name="v">degC/min</param>
         public void SetRampRate(double v)
         {
-            if (!IsInitialized) throw NotInitializedExcepton;
             lock (LockObject)
             {
+                if (!IsInitialized) throw NotInitializedExcepton;
                 SetRampRateDegPerMin(this, Config.DeviceAddress);
                 SetRampRate(this, Config.DeviceAddress, v);
             }
@@ -93,11 +109,11 @@ namespace TempProServer
 
         public void SetRampControl(bool enable)
         {
-            if (!IsInitialized) throw NotInitializedExcepton;
             if (enable)
             {
                 lock (LockObject)
                 {
+                    if (!IsInitialized) throw NotInitializedExcepton;
                     SetEnableRampControl(this, Config.DeviceAddress);
                 }
             }
@@ -105,6 +121,7 @@ namespace TempProServer
             {
                 lock (LockObject)
                 {
+                    if (!IsInitialized) throw NotInitializedExcepton;
                     SetDisableRampControl(this, Config.DeviceAddress);
                 }
             }
@@ -116,13 +133,30 @@ namespace TempProServer
         /// <returns>degC</returns>
         public double GetTemperature()
         {
-            if (!IsInitialized) throw NotInitializedExcepton;
             double ret;
             lock (LockObject)
             {
+                if (!IsInitialized) throw NotInitializedExcepton;
                 ret = GetProcessValue(this, Config.DeviceAddress, bDegF);
             }
             return ret;
+        }
+
+        public Tuple<bool, string> GetConnectionStatus()
+        {
+            lock (LockObject) {
+                return USBStatusCheck(this);
+            }
+        }
+
+        public void CloseConnection()
+        {
+            lock (LockObject)
+            {
+                if (IsInitialized) return;
+                CloseUSBPort();
+                IsInitialized = false;
+            }
         }
     }
 }
