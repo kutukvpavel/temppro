@@ -1,0 +1,15 @@
+InitialWaitSeconds: 1
+CommonRampRate: 100
+AfterScriptT: 30
+Segments:
+- T: 30
+  Ramp: 
+  ControlRamp: false
+  Total: 3600
+  Soak: 
+- T: 100
+  Ramp: 50
+  ControlRamp: true
+  Total: 
+  Soak: 3600
+EnableLog: true

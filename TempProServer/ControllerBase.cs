@@ -899,7 +899,7 @@ namespace TempProServer
             }
         }
 
-        protected bool SetSetPoint(Controller currUSBObject, int intDevAddr, double setPtValue, bool bUnitsF)
+        protected bool SetSetPoint(Controller currUSBObject, int intDevAddr, float setPtValue, bool bUnitsF)
         {
             checked
             {
@@ -948,9 +948,9 @@ namespace TempProServer
                 };
                 if (!bUnitsF)
                 {
-                    setPtValue = setPtValue * 9.0 / 5.0 + 32.0;
+                    setPtValue = setPtValue * 9.0f / 5.0f + 32.0f;
                 }
-                setPtValue *= 1000.0;
+                setPtValue *= 1000.0f;
                 theData[7] = (byte)unchecked((checked((long)Math.Round(setPtValue)) >> 24) % 256);
                 theData[8] = (byte)unchecked((checked((long)Math.Round(setPtValue)) >> 16) % 256);
                 theData[9] = (byte)unchecked((checked((long)Math.Round(setPtValue)) >> 8) % 256);
@@ -965,7 +965,7 @@ namespace TempProServer
             }
         }
 
-        protected bool SetRampRate(Controller currUSBObject, int intDevAddr, double rampRateValue)
+        protected bool SetRampRate(Controller currUSBObject, int intDevAddr, float rampRateValue)
         {
             checked
             {
@@ -1023,8 +1023,8 @@ namespace TempProServer
                     255,
                     255
                 };
-                rampRateValue *= 1.8;
-                rampRateValue *= 1000.0;
+                rampRateValue *= 1.8f;
+                rampRateValue *= 1000.0f;
                 theData[7] = (byte)unchecked((checked((long)Math.Round(rampRateValue)) >> 24) % 256);
                 theData[8] = (byte)unchecked((checked((long)Math.Round(rampRateValue)) >> 16) % 256);
                 theData[9] = (byte)unchecked((checked((long)Math.Round(rampRateValue)) >> 8) % 256);

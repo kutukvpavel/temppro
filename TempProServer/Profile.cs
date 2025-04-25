@@ -92,11 +92,37 @@ namespace TempProServer
     [YamlSerializable]
     public class Profile
     {
+        public static Profile Example { get; } = new Profile()
+        {
+            InitialWaitSeconds = 1,
+            CommonRampRate = 100,
+            AfterScriptT = 30,
+            Segments = new ProfileSegment[] {
+                new ProfileSegment() {
+                    T = 30,
+                    Ramp = null,
+                    ControlRamp = false,
+                    Total = 3600
+                },
+                new ProfileSegment() {
+                    T = 100,
+                    Ramp = 50,
+                    ControlRamp = true,
+                    Soak = 3600
+                }
+            }
+        };
         public static Profile Load(string path)
         {
             var deserializer = new DeserializerBuilder().Build();
             using var reader = new StreamReader(path);
             return deserializer.Deserialize<Profile>(reader);
+        }
+        public static void Save(string path, Profile p)
+        {
+            var serializer = new SerializerBuilder().Build();
+            using var writer = new StreamWriter(path);
+            serializer.Serialize(writer, p);
         }
 
         public Profile() {

@@ -32,7 +32,7 @@ namespace TempProServer
                     config.Title = "Main menu";
                     config.EnableWriteTitle = true;
                     config.EnableBreadcrumb = true;
-                    config.ClearConsole = false;
+                    config.ClearConsole = true;
                 });
 
             menu.Show();
@@ -40,7 +40,10 @@ namespace TempProServer
 
         public static void GenerateExamples(string[] args, Options o)
         {
-            
+            Configuration.Save(Path.Combine(Environment.CurrentDirectory, "config.yaml"));
+            Profile.Save(Path.Combine(Environment.CurrentDirectory, "example_profile.yaml"), Profile.Example);
+            Console.WriteLine("Examples written to the working directoy. Press any key to return...");
+            Console.ReadKey();
         }
 
         public static void ConnectedMenuShow(string[] args, Options o)
@@ -65,7 +68,7 @@ namespace TempProServer
                         Console.WriteLine("Press any key to return...");
                         while (!Console.KeyAvailable && !CancellationSource.IsCancellationRequested)
                         {
-                            Console.Write($"\rTemp = {controller.GetTemperature()} deg C");
+                            Console.Write($"\rTemp = {controller.GetTemperature():F2} deg C   ");
                             Thread.Sleep(1000);
                         }
                         Console.ReadKey(true);
@@ -82,6 +85,22 @@ namespace TempProServer
                         else
                         {
                             Console.WriteLine("Wrong format. Press any key to return...");
+                            Console.ReadKey();
+                        }
+                    })
+                    .Add("Set Ramp Rate", () => {
+                        Console.WriteLine("Enter rate (deg C / min):");
+                        string? s = Console.ReadLine();
+                        if (double.TryParse(s, out double v))
+                        {
+                            controller.SetRampControl(true);
+                            controller.SetRampRate(v);
+                            Console.WriteLine("OK");
+                        }
+                        else
+                        {
+                            controller.SetRampControl(false);
+                            Console.WriteLine("Wrong format. Ramp control disabled. Press any key to return...");
                             Console.ReadKey();
                         }
                     })

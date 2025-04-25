@@ -1,0 +1,8 @@
+SensorType: Thermocouple
+DeviceAddress: 1
+MaxRampRate: 100
+AssumedRoomTemperature: 30
+MaxTemperature: 700
+MinTemperature: 20
+RampControlTolerance: 2
+RampControlTimeout: 600

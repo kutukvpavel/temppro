@@ -89,7 +89,7 @@ namespace TempProServer
             lock (LockObject)
             {
                 if (!IsInitialized) throw NotInitializedExcepton;
-                SetSetPoint(this, Config.DeviceAddress, v, bDegF);
+                SetSetPoint(this, Config.DeviceAddress, (float)v, bDegF);
             }
         }
 
@@ -103,7 +103,7 @@ namespace TempProServer
             {
                 if (!IsInitialized) throw NotInitializedExcepton;
                 SetRampRateDegPerMin(this, Config.DeviceAddress);
-                SetRampRate(this, Config.DeviceAddress, v);
+                SetRampRate(this, Config.DeviceAddress, (float)v);
             }
         }
 
