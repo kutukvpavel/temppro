@@ -169,7 +169,8 @@ namespace TempProServer
             }
             string logPath = Path.Combine(Environment.CurrentDirectory, $"temppro_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.log");
             string serviceLogPath = Path.Combine(Environment.CurrentDirectory, $"temppro_service_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.log");
-            TextWriter serviceLogger = File.AppendText(serviceLogPath);
+            StreamWriter serviceLogger = File.AppendText(serviceLogPath);
+            serviceLogger.AutoFlush = true;
             var prf = Profile.Load(path);
             var exec = new Execution(prf, ctrl, Configuration.Instance);
             exec.ExceptionOccurred += (o, e) => Console.WriteLine($"Exception during profile execution: {e}");
@@ -189,6 +190,7 @@ namespace TempProServer
             try
             {
                 var err = exec.VerifyAndCalculate(serviceLogger);
+                serviceLogger.Flush();
                 if (err != null)
                 {
                     Log($"Profile did not pass validation: {err}", serviceLogger);
@@ -216,8 +218,10 @@ namespace TempProServer
             {
                 var logWriter = File.AppendText(logPath);
                 logWriterHandle = logWriter;
-                exec.LogEvent += (o, t) =>
+                logWriter.AutoFlush = true;
+                exec.LogEvent += (o, t) => {
                     logWriter.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0}, {1:F2}", DateTime.Now, t));
+                };
             }
             while (!CancellationSource.IsCancellationRequested && exec.State == ExecutionStates.Running)
             {
