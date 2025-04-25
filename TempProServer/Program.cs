@@ -230,7 +230,7 @@ namespace TempProServer
                     Log("Controller communication error, aborting", serviceLogger);
                     break;
                 }
-                Console.Write($"\rT = {exec.CurrentTemperature:F1}, set = {exec.CurrentSetpoint:F1}, step = {exec.SegmentIndex} ({progress:F0}%), tr = {exec.TimeRemaining}");
+                Console.Write($"\rT = {exec.CurrentTemperature:F1}, set = {exec.CurrentSetpoint:F1}, step = {exec.SegmentIndex + 1} out of {prf.Segments.Length} ({progress:F0}%), past = {exec.TimePast}, rem. = {exec.TimeRemaining}       ");
                 Thread.Sleep(1000);
             }
             if (CancellationSource.IsCancellationRequested || ctrl.ErrorOccurred) exec.Abort();
