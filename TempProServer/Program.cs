@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.IO;
 using System.Threading;
 using CommandLine;
@@ -22,6 +23,7 @@ namespace TempProServer
 
             var menu = new ConsoleMenu(args, level: 0)
                 .Add("Connect to TempPRO", () => Parser.Default.ParseArguments<Options>(args).WithParsed((Options o) => ConnectedMenuShow(args, o)))
+                .Add("Generate example cfg/profile", () => Parser.Default.ParseArguments<Options>(args).WithParsed((Options o) => GenerateExamples(args, o)))
                 .Add("Exit", () => Environment.Exit(0))
                 .Configure(config =>
                 {
@@ -34,6 +36,11 @@ namespace TempProServer
                 });
 
             menu.Show();
+        }
+
+        public static void GenerateExamples(string[] args, Options o)
+        {
+            
         }
 
         public static void ConnectedMenuShow(string[] args, Options o)
@@ -136,6 +143,7 @@ namespace TempProServer
             {
                 path = Path.GetFullPath(path, Environment.CurrentDirectory);
             }
+            string logPath = Path.Combine(Environment.CurrentDirectory, $"temppro_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.log");
             var prf = Profile.Load(path);
             var exec = new Execution(prf, ctrl, Configuration.Instance);
             try
@@ -174,6 +182,7 @@ namespace TempProServer
                 exec.Abort();
                 return;
             }
+            using var logWriter = File.AppendText(logPath);
             while (!CancellationSource.IsCancellationRequested && exec.State == ExecutionStates.Running)
             {
                 if (ctrl.ErrorOccurred)
@@ -182,6 +191,10 @@ namespace TempProServer
                     break;
                 }
                 Console.Write($"\rT = {exec.CurrentTemperature:F1}, set = {exec.CurrentSetpoint:F1}, step = {exec.SegmentIndex} ({exec.Progress:F0}%), tr = {exec.TimeRemaining}");
+                if (prf.EnableLog)
+                {
+                    logWriter.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0}, {1:F2}", DateTime.Now, exec.CurrentTemperature));
+                }
                 Thread.Sleep(1000);
             }
             if (CancellationSource.IsCancellationRequested || ctrl.ErrorOccurred) exec.Abort();

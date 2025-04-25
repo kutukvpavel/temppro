@@ -141,9 +141,11 @@ namespace TempProServer
             float progress = TimeEstimationIsAccurate ? (float)TimePast / EstimatedLength : (float)SegmentIndex / _Profile.Segments.Length;
             if (progress < 0) progress = 0;
             Progress.Report(progress);
+            LogEvent?.Invoke(this, CurrentTemperature);
         }
 
         public event EventHandler<Exception>? ExceptionOccurred;
+        public event EventHandler<double>? LogEvent;
 
         public Execution(Profile prf, Controller ctrl, Configuration cfg)
         {

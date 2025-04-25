@@ -107,6 +107,7 @@ namespace TempProServer
         public double? CommonRampRate { get; set; } //Enforce a single ramp rate for all segments
         public double? AfterScriptT { get; set; } //Temperature to set after script completion (no time constraints)
         public ProfileSegment[] Segments { get; set; }
+        public bool EnableLog { get; set; } = true;
 
         [YamlIgnore]
         public int TotalTemperatures => Segments.Length + 1 + (AfterScriptT.HasValue ? 1 : 0);
