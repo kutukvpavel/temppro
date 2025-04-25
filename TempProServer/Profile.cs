@@ -199,6 +199,7 @@ namespace TempProServer
             {
                 plot.Add(new ProfilePoint(l, AfterScriptT.Value));
             }
+            Verified = true;
             return plot;
         }
     }

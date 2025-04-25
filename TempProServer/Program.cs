@@ -21,9 +21,13 @@ namespace TempProServer
             Console.WriteLine("Suckless TempPro software v0.1. Goodnight Moon!");
             Console.CancelKeyPress += Console_Cancel;
 
+            Options cliOptions = null;
+            Parser.Default.ParseArguments<Options>(args).WithParsed((Options o) => cliOptions = o);
+            if (cliOptions == null) return;
+
             var menu = new ConsoleMenu(args, level: 0)
-                .Add("Connect to TempPRO", () => Parser.Default.ParseArguments<Options>(args).WithParsed((Options o) => ConnectedMenuShow(args, o)))
-                .Add("Generate example cfg/profile", () => Parser.Default.ParseArguments<Options>(args).WithParsed((Options o) => GenerateExamples(args, o)))
+                .Add("Connect to TempPRO", () => ConnectedMenuShow(args, cliOptions))
+                .Add("Generate example cfg/profile", () => GenerateExamples(args, cliOptions))
                 .Add("Exit", () => Environment.Exit(0))
                 .Configure(config =>
                 {
@@ -191,8 +195,10 @@ namespace TempProServer
             {
                 Console.WriteLine($"Error during profile validation: {ex}");
             }
+            float progress = 0;
             try
             {
+                ((Progress<float>)exec.Progress).ProgressChanged += (object? s, float p) => progress = p;
                 exec.Start();
             }
             catch (Exception ex)
@@ -209,7 +215,7 @@ namespace TempProServer
                     Console.WriteLine("Controller communication error, aborting");
                     break;
                 }
-                Console.Write($"\rT = {exec.CurrentTemperature:F1}, set = {exec.CurrentSetpoint:F1}, step = {exec.SegmentIndex} ({exec.Progress:F0}%), tr = {exec.TimeRemaining}");
+                Console.Write($"\rT = {exec.CurrentTemperature:F1}, set = {exec.CurrentSetpoint:F1}, step = {exec.SegmentIndex} ({progress:F0}%), tr = {exec.TimeRemaining}");
                 if (prf.EnableLog)
                 {
                     logWriter.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0}, {1:F2}", DateTime.Now, exec.CurrentTemperature));
