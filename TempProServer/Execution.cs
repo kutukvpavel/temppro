@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Timers;
+using System.IO;
 
 namespace TempProServer
 {
@@ -37,6 +38,11 @@ namespace TempProServer
         protected Semaphore _ForceNextSemaphore = new Semaphore(0, 1);
         protected Queue<double> _TempTrend;
 
+        protected void SetSetpoint(double t)
+        {
+            _Controller.SetSetpoint(t);
+            CurrentSetpoint = t;
+        }
         protected void ExecutionEngine(int localTime)
         {
             CurrentTemperature = _Controller.GetTemperature();
@@ -58,7 +64,7 @@ namespace TempProServer
                     break;
                 case EngineStates.ControlledRamping:
                     if ((Math.Abs(CurrentTemperature - currentSegment.T) < _Config.RampControlTolerance) ||
-                        ((TimePast - currentSegment.StartTime) > _Config.RampControlTimeout) &&
+                        ((localTime - currentSegment.StartTime) > _Config.RampControlTimeout) &&
                         ((_TempTrend.Max() - _TempTrend.Min()) < _Config.RampControlTolerance))
                     {
                         currentSegment.ProjectedEnd = localTime + currentSegment.Soak.Value;
@@ -80,6 +86,7 @@ namespace TempProServer
                 {
                     nextSegment.StartTime = localTime;
                     nextSegment.ProjectedEnd = nextSegment.StartTime + nextSegment.Total.Value;
+                    nextSegment.ProjectedSoakStart = nextSegment.ProjectedEnd - (nextSegment.Soak ?? 0);
                     SegmentIndex++;
                     _EngineState = nextSegment.Type switch
                     {
@@ -94,20 +101,27 @@ namespace TempProServer
                     case EngineStates.SetupIsothermal:
                         CanOverride = true;
                         _Controller.SetRampControl(false);
-                        _Controller.SetSetpoint(nextSegment.T);
+                        SetSetpoint(nextSegment.T);
+                        _EngineState = EngineStates.WaitingIsothermal;
                         break;
                     case EngineStates.SetupCalculatedRamp:
                     case EngineStates.SetupControlledRamp:
                         CanOverride = false;
                         _Controller.SetRampControl(true);
                         _Controller.SetRampRate(nextSegment.Ramp.Value);
-                        _Controller.SetSetpoint(nextSegment.T);
+                        SetSetpoint(nextSegment.T);
+                        _EngineState = _EngineState switch
+                        {
+                            EngineStates.SetupCalculatedRamp => EngineStates.CalculatedRamping,
+                            EngineStates.SetupControlledRamp => EngineStates.ControlledRamping,
+                            _ => throw new InvalidOperationException(),
+                        };
                         break;
                     case EngineStates.End:
                         if (_Profile.AfterScriptT.HasValue)
                         {
                             _Controller.SetRampControl(false);
-                            _Controller.SetSetpoint(_Profile.AfterScriptT.Value);
+                            SetSetpoint(_Profile.AfterScriptT.Value);
                         }
                         Abort();
                         break;
@@ -130,7 +144,7 @@ namespace TempProServer
                 try
                 {
                     _Controller.SetRampControl(false);
-                    _Controller.SetSetpoint(_Config.AssumedRoomTemperature);
+                    SetSetpoint(_Config.AssumedRoomTemperature);
                 }
                 catch (Exception secondaryEx)
                 {
@@ -182,6 +196,11 @@ namespace TempProServer
             if (!_Controller.IsInitialized) throw new InvalidOperationException("Controller has to be initialized before execution");
             State = ExecutionStates.Running;
             CanOverride = true;
+            if (_Profile.LimitRampRate.HasValue)
+            {
+                _Controller.SetRampRate(_Profile.LimitRampRate.Value);
+                _Controller.SetRampControl(true);
+            }
             _Timer.Start();
         }
         public void Pause()
@@ -197,6 +216,7 @@ namespace TempProServer
             TimePast = 0;
             Progress.Report(0);
             State = ExecutionStates.Idle;
+            _EngineState = EngineStates.Idle;
         }
         public void ForceNext()
         {
@@ -213,14 +233,15 @@ namespace TempProServer
         public void OverrideIsothermalSegment(double v)
         {
             if (State != ExecutionStates.Running || !CanOverride) return;
-            _Controller.SetSetpoint(v);
+            SetSetpoint(v);
         }
-        public Exception? VerifyAndCalculate()
+        public Exception? VerifyAndCalculate(TextWriter feedback)
         {
             try
             {
-                Simulation = _Profile.VerifyAndCalculatePlot(_Config);
+                Simulation = _Profile.VerifyAndCalculatePlot(_Config, feedback);
                 TimeEstimationIsAccurate = !_Profile.Segments.Any(x => x.Type == SegmentTypes.ControlledRamp);
+                feedback.WriteLine($"Time estimation is accurate: {TimeEstimationIsAccurate}");
                 return null;
             }
             catch (Exception ex)

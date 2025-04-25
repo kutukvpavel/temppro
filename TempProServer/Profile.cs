@@ -95,7 +95,7 @@ namespace TempProServer
         public static Profile Example { get; } = new Profile()
         {
             InitialWaitSeconds = 1,
-            CommonRampRate = 100,
+            LimitRampRate = 100,
             AfterScriptT = 30,
             Segments = new ProfileSegment[] {
                 new ProfileSegment() {
@@ -130,7 +130,8 @@ namespace TempProServer
         }
 
         public int? InitialWaitSeconds { get; set; }
-        public double? CommonRampRate { get; set; } //Enforce a single ramp rate for all segments
+        public double? CommonRampRate { get; set; } //Enforce a single ramp rate for all segments (makes isothermals ramps!)
+        public double? LimitRampRate { get; set; }
         public double? AfterScriptT { get; set; } //Temperature to set after script completion (no time constraints)
         public ProfileSegment[] Segments { get; set; }
         public bool EnableLog { get; set; } = true;
@@ -140,7 +141,7 @@ namespace TempProServer
         [YamlIgnore]
         public bool Verified { get; protected set; } = false;
 
-        public List<ProfilePoint> VerifyAndCalculatePlot(Configuration cfg)
+        public List<ProfilePoint> VerifyAndCalculatePlot(Configuration cfg, TextWriter feedback)
         {
             List<ProfilePoint> plot = new(TotalTemperatures)
             {
@@ -150,6 +151,7 @@ namespace TempProServer
             if (l < 0) throw new InvalidDataException("Initial wait time must be non-negative");
             double temp = cfg.AssumedRoomTemperature;
             if (temp < cfg.MinTemperature || temp > cfg.MaxTemperature) throw new InvalidDataException("Assumed RT out of range");
+            if (LimitRampRate > cfg.MaxRampRate || LimitRampRate <= 0) throw new InvalidDataException("Ramp limit out of range");
             for (int i = 0; i < Segments.Length; i++)
             {
                 var segment = Segments[i];
@@ -157,6 +159,7 @@ namespace TempProServer
                 {
                     segment.Ramp = CommonRampRate;
                 }
+                if (segment.Ramp > LimitRampRate) throw new InvalidDataException("Specified ramp rate is out of range");
                 try
                 {
                     segment.Verify(cfg);
@@ -194,6 +197,7 @@ namespace TempProServer
                 temp = segment.T;
                 if (temp < cfg.MinTemperature || temp > cfg.MaxTemperature) throw new InvalidDataException($"T is out of range for segment #{i}");
                 plot.Add(new ProfilePoint(l, temp));
+                feedback.WriteLine(@$"Parsed segment of type = {Enum.GetName(typeof(SegmentTypes), segment.Type)}, T at the end = {temp}, segment len = {segment.Total}, total len = {l}");
             }
             if (AfterScriptT.HasValue)
             {

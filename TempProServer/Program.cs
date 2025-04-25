@@ -21,7 +21,7 @@ namespace TempProServer
             Console.WriteLine("Suckless TempPro software v0.1. Goodnight Moon!");
             Console.CancelKeyPress += Console_Cancel;
 
-            Options cliOptions = null;
+            Options? cliOptions = null;
             Parser.Default.ParseArguments<Options>(args).WithParsed((Options o) => cliOptions = o);
             if (cliOptions == null) return;
 
@@ -118,6 +118,7 @@ namespace TempProServer
                         {
                             Configuration.Save(configPath);
                             Console.WriteLine("WARNING: no config file was present, written one with defaults");
+                            Console.WriteLine($"P.S. Expecting config at: {configPath}");
                         }
                         if (o.ProfileFile != null)
                         {
@@ -167,33 +168,36 @@ namespace TempProServer
                 path = Path.GetFullPath(path, Environment.CurrentDirectory);
             }
             string logPath = Path.Combine(Environment.CurrentDirectory, $"temppro_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.log");
+            string serviceLogPath = Path.Combine(Environment.CurrentDirectory, $"temppro_service_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.log");
+            TextWriter serviceLogger = File.AppendText(serviceLogPath);
             var prf = Profile.Load(path);
             var exec = new Execution(prf, ctrl, Configuration.Instance);
+            exec.ExceptionOccurred += (o, e) => Console.WriteLine($"Exception during profile execution: {e}");
             try
             {
                 var status = ctrl.GetConnectionStatus();
                 if (!status.Item1) {
-                    Console.WriteLine($"Controller connection error: {status.Item2}");
+                    Log($"Controller connection error: {status.Item2}", serviceLogger);
                     return;
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Failed to check controller connection status: {ex}");
+                Log($"Failed to check controller connection status: {ex}", serviceLogger);
                 return;
             }
             try
             {
-                var err = exec.VerifyAndCalculate();
+                var err = exec.VerifyAndCalculate(serviceLogger);
                 if (err != null)
                 {
-                    Console.WriteLine($"Profile did not pass validation: {err}");
+                    Log($"Profile did not pass validation: {err}", serviceLogger);
                     return;
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error during profile validation: {ex}");
+                Log($"Error during profile validation: {ex}", serviceLogger);
             }
             float progress = 0;
             try
@@ -203,26 +207,36 @@ namespace TempProServer
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Failed to start execution: {ex}");
+                Log($"Failed to start execution: {ex}", serviceLogger);
                 exec.Abort();
                 return;
             }
-            using var logWriter = File.AppendText(logPath);
+            TextWriter? logWriterHandle = null;
+            if (prf.EnableLog)
+            {
+                var logWriter = File.AppendText(logPath);
+                logWriterHandle = logWriter;
+                exec.LogEvent += (o, t) =>
+                    logWriter.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0}, {1:F2}", DateTime.Now, t));
+            }
             while (!CancellationSource.IsCancellationRequested && exec.State == ExecutionStates.Running)
             {
                 if (ctrl.ErrorOccurred)
                 {
-                    Console.WriteLine("Controller communication error, aborting");
+                    Log("Controller communication error, aborting", serviceLogger);
                     break;
                 }
                 Console.Write($"\rT = {exec.CurrentTemperature:F1}, set = {exec.CurrentSetpoint:F1}, step = {exec.SegmentIndex} ({progress:F0}%), tr = {exec.TimeRemaining}");
-                if (prf.EnableLog)
-                {
-                    logWriter.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0}, {1:F2}", DateTime.Now, exec.CurrentTemperature));
-                }
                 Thread.Sleep(1000);
             }
             if (CancellationSource.IsCancellationRequested || ctrl.ErrorOccurred) exec.Abort();
+            if (logWriterHandle != null) logWriterHandle.Close();
+        }
+
+        private static void Log(string msg, TextWriter w)
+        {
+            Console.WriteLine(msg);
+            w.WriteLine(msg);
         }
     }
 }
