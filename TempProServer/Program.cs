@@ -147,7 +147,9 @@ namespace TempProServer
                         config.Title = "Main menu";
                         config.EnableWriteTitle = true;
                         config.EnableBreadcrumb = true;
+#if DEBUG
                         config.ClearConsole = false;
+#endif
                     });
 
                     menu.Show();
@@ -204,7 +206,7 @@ namespace TempProServer
             float progress = 0;
             try
             {
-                ((Progress<float>)exec.Progress).ProgressChanged += (object? s, float p) => progress = p;
+                ((Progress<float>)exec.Progress).ProgressChanged += (object? s, float p) => progress = p * 100.0f;
                 exec.Start();
             }
             catch (Exception ex)
