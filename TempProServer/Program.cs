@@ -18,7 +18,8 @@ namespace TempProServer
 
         public static void Main(string[] args)
         {
-            Console.WriteLine("Suckless TempPro software v0.1. Goodnight Moon!");
+            string greet = "Suckless TempPro software v0.1. Goodnight Moon!";
+            Console.WriteLine(greet);
             Console.CancelKeyPress += Console_Cancel;
 
             Options? cliOptions = null;
@@ -33,7 +34,7 @@ namespace TempProServer
                 {
                     config.Selector = "--> ";
                     config.EnableFilter = true;
-                    config.Title = "Main menu";
+                    config.Title = greet;
                     config.EnableWriteTitle = true;
                     config.EnableBreadcrumb = true;
                     config.ClearConsole = true;
@@ -144,7 +145,7 @@ namespace TempProServer
                     {
                         config.Selector = "--> ";
                         config.EnableFilter = true;
-                        config.Title = "Main menu";
+                        config.Title = "Connected to TempPro. Select action:";
                         config.EnableWriteTitle = true;
                         config.EnableBreadcrumb = true;
 #if DEBUG
